@@ -50,12 +50,12 @@ const DEFAULT_TEACHERS = [
   { id: "t29", name: "Sh. Sachin", category: "Regular", level: "Secondary" },
   { id: "t30", name: "Sh. Parikhit Kata", category: "Regular", level: "Secondary" },
   { id: "t31", name: "Ms. Rajeswary Acharya", category: "Regular", level: "Secondary" },
-  { id: "t32", name: "Sh. D.K Mishra", category: "Regular", level: "Secondary" },
+  { id: "t32", name: "Sh. Debesh K Mishra", category: "Regular", level: "Secondary" },
   { id: "t33", name: "Ms. Sunanda Panigrahi", category: "Regular", level: "Secondary" },
   { id: "t34", name: "Sh. Khusiram Putel", category: "Regular", level: "Secondary" },
   { id: "t35", name: "Ms. Tanushree Pujhari", category: "Regular", level: "Secondary" },
   { id: "t36", name: "Sh. R.C Mishra", category: "Contractual", level: "Secondary" },
-  { id: "t37", name: "Sh. M.K Rout", category: "Contractual", level: "Secondary" },
+  { id: "t37", name: "Sh. Manoj K Rout", category: "Contractual", level: "Secondary" },
   { id: "t38", name: "Sh. Sarat Dip", category: "Contractual", level: "Primary" },
   { id: "t39", name: "Mrs. Nikita Acharya", category: "Contractual", level: "Secondary" },
   { id: "t40", name: "Ms. Soumya Swain", category: "Contractual", level: "Primary" },
@@ -65,11 +65,61 @@ const DEFAULT_TEACHERS = [
   { id: "t44", name: "Ms. Kabita Kabyashree", category: "Contractual", level: "Primary" },
   { id: "t45", name: "Mrs. Bharati Pradhan", category: "Contractual", level: "Primary" },
   { id: "t46", name: "Sh. M.S Rana", category: "Contractual", level: "Secondary" },
-  { id: "t47", name: "Sh. S.R. Pradhan", category: "Contractual", level: "Secondary" },
+  { id: "t47", name: "Sh. Soumya R. Pradhan", category: "Contractual", level: "Secondary" },
   { id: "t48", name: "Ms. Madhusmita Senapati", category: "Contractual", level: "Secondary" },
   { id: "t49", name: "Ms. Lipika Naik", category: "Contractual", level: "Secondary" },
   { id: "t50", name: "Mrs. Abhisikta Baral", category: "Contractual", level: "Secondary" }
 ];
+
+const DEFAULT_ROSTER_ASSIGNMENTS = {
+  "Monday_gate_entry1": "t16",
+  "Monday_gate_entry2": "t14",
+  "Monday_gate_exit1": "t2",
+  "Monday_gate_exit2": "t24",
+  "Monday_lunch_chem": "t45",
+  "Monday_lunch_class6b": "t36",
+  "Monday_lunch_assembly": "t47",
+
+  "Tuesday_gate_entry1": "t8",
+  "Tuesday_gate_entry2": "t11",
+  "Tuesday_gate_exit1": "t10",
+  "Tuesday_gate_exit2": "t27",
+  "Tuesday_lunch_chem": "t35",
+  "Tuesday_lunch_class6b": "t38",
+  "Tuesday_lunch_assembly": "t40",
+
+  "Wednesday_gate_entry1": "t22",
+  "Wednesday_gate_entry2": "t6",
+  "Wednesday_gate_exit1": "t21",
+  "Wednesday_gate_exit2": "t23",
+  "Wednesday_lunch_chem": "t36",
+  "Wednesday_lunch_class6b": "t37",
+  "Wednesday_lunch_assembly": "t45",
+
+  "Thursday_gate_entry1": "t13",
+  "Thursday_gate_entry2": "t4",
+  "Thursday_gate_exit1": "t15",
+  "Thursday_gate_exit2": "t3",
+  "Thursday_lunch_chem": "t32",
+  "Thursday_lunch_class6b": "t39",
+  "Thursday_lunch_assembly": "t41",
+
+  "Friday_gate_entry1": "t5",
+  "Friday_gate_entry2": "t26",
+  "Friday_gate_exit1": "t34",
+  "Friday_gate_exit2": "t1",
+  "Friday_lunch_chem": "t35",
+  "Friday_lunch_class6b": "t33",
+  "Friday_lunch_assembly": "t44",
+
+  "Saturday_gate_entry1": "t17",
+  "Saturday_gate_entry2": "t9",
+  "Saturday_gate_exit1": "t7",
+  "Saturday_gate_exit2": "t19",
+  "Saturday_lunch_chem": "t41",
+  "Saturday_lunch_class6b": "t49",
+  "Saturday_lunch_assembly": "t31"
+};
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -190,7 +240,9 @@ function saveLogoToStorage(dataUrl) {
 function loadRosterFromStorage() {
   const savedRoster = localStorage.getItem("gate_duty_roster");
   if (savedRoster) {
-    try { rosterAssignments = JSON.parse(savedRoster); } catch (e) { rosterAssignments = {}; }
+    try { rosterAssignments = JSON.parse(savedRoster); } catch (e) { rosterAssignments = { ...DEFAULT_ROSTER_ASSIGNMENTS }; }
+  } else {
+    rosterAssignments = { ...DEFAULT_ROSTER_ASSIGNMENTS };
   }
 }
 
