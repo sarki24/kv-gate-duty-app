@@ -113,25 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initDatePicker();
   loadRosterFromStorage();
   
-  // Auto-shuffle if empty or old unmixed roster
-  let lunchRegs = 0;
-  let entry2Cons = 0;
-  let exit2Cons = 0;
-  if (rosterAssignments) {
-    WEEKDAYS.forEach(day => {
-      lunchPosts.forEach(p => {
-        const tid = rosterAssignments[`${day}_${p.key}`];
-        const teacher = teachers.find(t => t.id === tid);
-        if (teacher && teacher.category === "Regular") lunchRegs++;
-      });
-      const tE2 = teachers.find(t => t.id === rosterAssignments[`${day}_gate_entry2`]);
-      if (tE2 && tE2.category === "Contractual") entry2Cons++;
-      const tX2 = teachers.find(t => t.id === rosterAssignments[`${day}_gate_exit2`]);
-      if (tX2 && tX2.category === "Contractual") exit2Cons++;
-    });
-  }
-
-  if (!rosterAssignments || Object.keys(rosterAssignments).length === 0 || lunchRegs < 5 || entry2Cons < 1 || exit2Cons < 1) {
+  // Auto-fill full roster if empty on first visit
+  const assignedCount = rosterAssignments ? Object.keys(rosterAssignments).length : 0;
+  if (!rosterAssignments || assignedCount < 42) {
     if (teachers.length > 0) {
       const res = executeConstraintShuffle();
       if (res.success) {
