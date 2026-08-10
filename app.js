@@ -490,11 +490,11 @@ function renderPdfPrintTables() {
   const pdfGateHeader1 = document.getElementById("pdfGateHeaderRow1");
   const pdfGateHeader2 = document.getElementById("pdfGateHeaderRow2");
   if (pdfGateHeader1 && pdfGateHeader2) {
-    let row1 = `<th rowspan="2" class="col-weekday dark-brown-header">Weekday</th>`;
+    let row1 = `<th rowspan="2" class="pdf-th-weekday">Weekday</th>`;
     let row2 = "";
     gatePosts.forEach(post => {
-      row1 += `<th colspan="2" class="dark-brown-header">${escapeHtml(post.label)} (${escapeHtml(post.time)})</th>`;
-      row2 += `<th>Teacher Name</th><th>Sign</th>`;
+      row1 += `<th colspan="2" class="pdf-th-post">${escapeHtml(post.label)}<br><small style="font-weight:normal; font-size: 8pt;">(${escapeHtml(post.time)})</small></th>`;
+      row2 += `<th class="pdf-th-sub">Teacher Name</th><th class="pdf-th-sub">Sign</th>`;
     });
     pdfGateHeader1.innerHTML = row1;
     pdfGateHeader2.innerHTML = row2;
@@ -512,7 +512,7 @@ function renderPdfPrintTables() {
         const cellKey = `${day}_${post.key}`;
         const tid = rosterAssignments[cellKey] || "";
         const cleanName = getTeacherNameById(tid);
-        rowHtml += `<td><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
+        rowHtml += `<td class="pdf-name-cell"><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
       });
 
       tr.innerHTML = rowHtml;
@@ -523,11 +523,11 @@ function renderPdfPrintTables() {
   const pdfLunchHeader1 = document.getElementById("pdfLunchHeaderRow1");
   const pdfLunchHeader2 = document.getElementById("pdfLunchHeaderRow2");
   if (pdfLunchHeader1 && pdfLunchHeader2) {
-    let row1 = `<th rowspan="2" class="col-weekday dark-brown-header">Weekday</th>`;
+    let row1 = `<th rowspan="2" class="pdf-th-weekday">Weekday</th>`;
     let row2 = "";
     lunchPosts.forEach(post => {
-      row1 += `<th colspan="2" class="dark-brown-header">${escapeHtml(post.label)} (${escapeHtml(post.time)})</th>`;
-      row2 += `<th>Teacher Name</th><th>Sign</th>`;
+      row1 += `<th colspan="2" class="pdf-th-post">${escapeHtml(post.label)}<br><small style="font-weight:normal; font-size: 8pt;">(${escapeHtml(post.time)})</small></th>`;
+      row2 += `<th class="pdf-th-sub">Teacher Name</th><th class="pdf-th-sub">Sign</th>`;
     });
     pdfLunchHeader1.innerHTML = row1;
     pdfLunchHeader2.innerHTML = row2;
@@ -545,7 +545,7 @@ function renderPdfPrintTables() {
         const cellKey = `${day}_${post.key}`;
         const tid = rosterAssignments[cellKey] || "";
         const cleanName = getTeacherNameById(tid);
-        rowHtml += `<td><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
+        rowHtml += `<td class="pdf-name-cell"><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
       });
 
       tr.innerHTML = rowHtml;

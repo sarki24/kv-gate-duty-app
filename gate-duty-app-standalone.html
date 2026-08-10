@@ -835,9 +835,6 @@ body {
 /* --------------------------------------------------------------------------
    PDF RENDER CONTAINER (OPTIMIZED FOR FULL A4 LANDSCAPE PAGE UTILIZATION)
    -------------------------------------------------------------------------- */
-/* --------------------------------------------------------------------------
-   PDF RENDER CONTAINER (OPTIMIZED FOR FULL A4 LANDSCAPE PAGE UTILIZATION)
-   -------------------------------------------------------------------------- */
 .pdf-export-container {
   background: #ffffff;
   color: #000000;
@@ -850,11 +847,9 @@ body {
 .pdf-page-container {
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 18px;
+  padding: 16px 20px;
   background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: block !important;
   page-break-inside: avoid;
   break-inside: avoid;
 }
@@ -866,7 +861,7 @@ body {
 }
 
 .pdf-header {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   border-bottom: 2.5px solid #3d2314;
   padding-bottom: 6px;
 }
@@ -922,42 +917,73 @@ body {
 }
 
 .pdf-table-wrapper {
-  margin-top: 8px;
-  margin-bottom: 14px;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+  display: block !important;
 }
 
 .pdf-table {
   width: 100% !important;
   border-collapse: collapse !important;
+  border-spacing: 0 !important;
   border: 2px solid #3d2314 !important;
+  margin: 0 !important;
   table-layout: fixed !important;
+}
+
+.pdf-table thead {
+  background-color: #3d2314 !important;
+}
+
+.pdf-table thead tr {
+  background-color: #3d2314 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .pdf-table th, 
 .pdf-table td {
   border: 1.5px solid #3d2314 !important;
-  padding: 8px 6px !important;
+  padding: 6px 5px !important;
   font-size: 9pt !important;
   vertical-align: middle !important;
   word-wrap: break-word !important;
   overflow: hidden !important;
 }
 
-.pdf-table th.dark-brown-header,
-.dark-brown-header {
+.pdf-th-weekday {
   background-color: #3d2314 !important;
   color: #ffffff !important;
-  font-weight: bold !important;
+  font-weight: 800 !important;
   text-align: center !important;
   font-size: 10pt !important;
+  padding: 8px 6px !important;
+  border: 1.5px solid #ffffff !important;
+  vertical-align: middle !important;
+  width: 14% !important;
 }
 
-.dark-brown-subheaders th {
+.pdf-th-post {
+  background-color: #3d2314 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  font-size: 9.5pt !important;
+  padding: 6px 4px !important;
+  border: 1.5px solid #ffffff !important;
+  vertical-align: middle !important;
+}
+
+.pdf-th-sub {
   background-color: #59351e !important;
   color: #ffffff !important;
-  font-size: 8.5pt !important;
+  font-weight: 700 !important;
   text-align: center !important;
+  font-size: 8.5pt !important;
   padding: 5px 4px !important;
+  border: 1.5px solid #ffffff !important;
+  vertical-align: middle !important;
 }
 
 .pdf-weekday-cell {
@@ -965,21 +991,28 @@ body {
   color: #2c1a0e !important;
   font-weight: bold !important;
   text-align: center !important;
-  font-size: 10pt !important;
-  padding: 8px 6px !important;
-  width: 12% !important;
+  font-size: 9.5pt !important;
+  padding: 6px 4px !important;
+  width: 14% !important;
+}
+
+.pdf-name-cell {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 6px 8px !important;
+  font-size: 9.5pt !important;
 }
 
 .pdf-sign-cell {
-  width: 55px !important;
+  width: 50px !important;
   text-align: center !important;
-  color: #cbd5e1;
+  background-color: #ffffff !important;
 }
 
 .pdf-footer {
   display: flex !important;
   justify-content: space-between;
-  margin-top: 15px;
+  margin-top: 20px;
   padding-top: 14px;
 }
 
@@ -2082,11 +2115,11 @@ function renderPdfPrintTables() {
   const pdfGateHeader1 = document.getElementById("pdfGateHeaderRow1");
   const pdfGateHeader2 = document.getElementById("pdfGateHeaderRow2");
   if (pdfGateHeader1 && pdfGateHeader2) {
-    let row1 = `<th rowspan="2" class="col-weekday dark-brown-header">Weekday</th>`;
+    let row1 = `<th rowspan="2" class="pdf-th-weekday">Weekday</th>`;
     let row2 = "";
     gatePosts.forEach(post => {
-      row1 += `<th colspan="2" class="dark-brown-header">${escapeHtml(post.label)} (${escapeHtml(post.time)})</th>`;
-      row2 += `<th>Teacher Name</th><th>Sign</th>`;
+      row1 += `<th colspan="2" class="pdf-th-post">${escapeHtml(post.label)}<br><small style="font-weight:normal; font-size: 8pt;">(${escapeHtml(post.time)})</small></th>`;
+      row2 += `<th class="pdf-th-sub">Teacher Name</th><th class="pdf-th-sub">Sign</th>`;
     });
     pdfGateHeader1.innerHTML = row1;
     pdfGateHeader2.innerHTML = row2;
@@ -2104,7 +2137,7 @@ function renderPdfPrintTables() {
         const cellKey = `${day}_${post.key}`;
         const tid = rosterAssignments[cellKey] || "";
         const cleanName = getTeacherNameById(tid);
-        rowHtml += `<td><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
+        rowHtml += `<td class="pdf-name-cell"><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
       });
 
       tr.innerHTML = rowHtml;
@@ -2115,11 +2148,11 @@ function renderPdfPrintTables() {
   const pdfLunchHeader1 = document.getElementById("pdfLunchHeaderRow1");
   const pdfLunchHeader2 = document.getElementById("pdfLunchHeaderRow2");
   if (pdfLunchHeader1 && pdfLunchHeader2) {
-    let row1 = `<th rowspan="2" class="col-weekday dark-brown-header">Weekday</th>`;
+    let row1 = `<th rowspan="2" class="pdf-th-weekday">Weekday</th>`;
     let row2 = "";
     lunchPosts.forEach(post => {
-      row1 += `<th colspan="2" class="dark-brown-header">${escapeHtml(post.label)} (${escapeHtml(post.time)})</th>`;
-      row2 += `<th>Teacher Name</th><th>Sign</th>`;
+      row1 += `<th colspan="2" class="pdf-th-post">${escapeHtml(post.label)}<br><small style="font-weight:normal; font-size: 8pt;">(${escapeHtml(post.time)})</small></th>`;
+      row2 += `<th class="pdf-th-sub">Teacher Name</th><th class="pdf-th-sub">Sign</th>`;
     });
     pdfLunchHeader1.innerHTML = row1;
     pdfLunchHeader2.innerHTML = row2;
@@ -2137,7 +2170,7 @@ function renderPdfPrintTables() {
         const cellKey = `${day}_${post.key}`;
         const tid = rosterAssignments[cellKey] || "";
         const cleanName = getTeacherNameById(tid);
-        rowHtml += `<td><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
+        rowHtml += `<td class="pdf-name-cell"><strong>${escapeHtml(cleanName)}</strong></td><td class="pdf-sign-cell"></td>`;
       });
 
       tr.innerHTML = rowHtml;
