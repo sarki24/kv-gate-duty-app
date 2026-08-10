@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gate Duty App - PM SHRI KV BHAWANIPATNA</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gate Duty">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/school.png">
+
+  <!-- Google Fonts & FontAwesome for icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- CDN Libraries for Export & Bulk Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Excel / CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Word (.docx) text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- Tesseract.js for OCR Image Text Recognition -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- TOP HEADER & BRANDING -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <!-- Logo Display / Upload Slot -->
+        <div class="logo-wrapper" id="logoWrapper" title="Click to upload KV logo image">
+          <img id="kvLogoImg" src="" alt="KV Logo" class="kv-logo hidden">
+          <div id="logoPlaceholder" class="logo-placeholder">
+            <i class="fa-solid fa-school"></i>
+            <span>Upload Logo</span>
+          </div>
+          <input type="file" id="logoFileInput" accept="image/*" class="file-input-hidden">
+        </div>
+        <div class="brand-titles">
+          <h1 class="school-heading">PM SHRI KV BHAWANIPATNA</h1>
+          <p class="app-subheading"><i class="fa-solid fa-clipboard-user"></i> Gate & Lunch Duty Roster Management</p>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="header-actions">
+        <div class="date-picker-group">
+          <label for="weekStartingDate"><i class="fa-regular fa-calendar-days"></i> Week Starting (Mon):</label>
+          <input type="date" id="weekStartingDate" class="date-input">
+        </div>
+        <div class="rule-toggle-group" style="display: flex; align-items: center; background: rgba(255,255,255,0.1); padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.2);">
+          <label style="font-size: 0.8rem; color: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" title="Enforces min 5 days Regular teachers and 1 day Contractual teacher for Gate 2 Entry & Exit. All other 5 duties unanimously mixed between Regular and Contractual staff.">
+            <input type="checkbox" id="gate2RegularToggle" checked onchange="toggleGate2RegularPriority(this.checked)" style="accent-color: #38bdf8; cursor: pointer; width: 15px; height: 15px;">
+            <span><i class="fa-solid fa-user-shield" style="color: #38bdf8;"></i> Gate 2 Priority (Min 5 Reg + 1 Con)</span>
+          </label>
+        </div>
+        <div class="button-group">
+          <button id="btnMobileAccess" class="btn btn-mobile" title="Scan QR Code or copy link to open app on your Mobile phone">
+            <i class="fa-solid fa-mobile-screen-button"></i> Mobile Access
+          </button>
+          <button id="btnEditTimings" class="btn btn-secondary" title="Edit duty posts & timings">
+            <i class="fa-solid fa-clock"></i> Edit Timings
+          </button>
+          <button id="btnTopFindReplace" class="btn btn-find-replace" title="Batch edit or replace common words in teacher names (like Find & Replace)">
+            <i class="fa-solid fa-magnifying-glass-arrow-right"></i> Find & Replace
+          </button>
+          <button id="btnScrollManageTeachers" class="btn btn-secondary" title="Jump to Manage Teachers section">
+            <i class="fa-solid fa-users-gear"></i> Manage Teachers
+          </button>
+          <button id="btnShuffle" class="btn btn-primary" title="Shuffle teachers fairly according to rules">
+            <i class="fa-solid fa-shuffle"></i> Shuffle Roster
+          </button>
+          <button id="btnExportPDF" class="btn btn-success" title="Download print-ready 2-page PDF">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="main-container">
+
+    <!-- ALERT / NOTIFICATION BANNER -->
+    <div id="alertBanner" class="alert-banner hidden">
+      <i id="alertIcon" class="fa-solid fa-circle-exclamation"></i>
+      <span id="alertMessage"></span>
+      <button class="alert-close" onclick="closeAlert()">&times;</button>
+    </div>
+
+    <!-- CUSTOM ROSTER NOTE / INSTRUCTIONS EDITABLE BOX -->
+    <section class="note-card">
+      <div class="note-header">
+        <label for="rosterNoteInput"><i class="fa-solid fa-pen-to-square"></i> Roster Instructions / Custom Note (Appears on final PDF):</label>
+      </div>
+      <textarea id="rosterNoteInput" class="note-textarea" rows="2" placeholder="e.g. Note: All staff members are requested to report to their designated duty posts 5 minutes prior to start time."></textarea>
+    </section>
+
+    <!-- SUMMARY STATS DASHBOARD CARDS (CLICKABLE) -->
+    <section class="stats-section">
+      <div class="stat-card" data-category="all" title="Click to view all teachers">
+        <div class="stat-icon total"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <span class="stat-value" id="statTotal">0</span>
+          <span class="stat-label">Total Teachers <i class="fa-solid fa-chevron-down stat-arrow"></i></span>
+        </div>
+      </div>
+      <div class="stat-card" data-category="Regular" title="Click to view Regular teachers">
+        <div class="stat-icon regular"><i class="fa-solid fa-user-check"></i></div>
+        <div class="stat-info">
+          <span class="stat-value" id="statRegular">0</span>
+          <span class="stat-label">Regular Teachers <i class="fa-solid fa-chevron-down stat-arrow"></i></span>
+        </div>
+      </div>
+      <div class="stat-card" data-category="Contractual" title="Click to view Contractual teachers">
+        <div class="stat-icon contractual"><i class="fa-solid fa-user-clock"></i></div>
+        <div class="stat-info">
+          <span class="stat-value" id="statContractual">0</span>
+          <span class="stat-label">Contractual Teachers <i class="fa-solid fa-chevron-down stat-arrow"></i></span>
+        </div>
+      </div>
+      <div class="stat-card" data-category="Primary" title="Click to view Primary staff">
+        <div class="stat-icon primary"><i class="fa-solid fa-child"></i></div>
+        <div class="stat-info">
+          <span class="stat-value" id="statPrimary">0</span>
+          <span class="stat-label">Primary Staff <i class="fa-solid fa-chevron-down stat-arrow"></i></span>
+        </div>
+      </div>
+      <div class="stat-card" data-category="Secondary" title="Click to view Secondary staff">
+        <div class="stat-icon secondary"><i class="fa-solid fa-graduation-cap"></i></div>
+        <div class="stat-info">
+          <span class="stat-value" id="statSecondary">0</span>
+          <span class="stat-label">Secondary Staff <i class="fa-solid fa-chevron-down stat-arrow"></i></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD DROPDOWN CATEGORY TEACHER LIST -->
+    <div id="statDropdownPanel" class="stat-dropdown-panel hidden">
+      <div class="dropdown-panel-header">
+        <h4 id="statDropdownTitle"><i class="fa-solid fa-list-check"></i> Category Teachers</h4>
+        <button class="panel-close-btn" onclick="closeStatDropdownPanel()">&times;</button>
+      </div>
+      <div id="statDropdownList" class="stat-dropdown-list">
+        <!-- Dynamic Chips -->
+      </div>
+    </div>
+
+    <!-- WEB APP INTERACTIVE ROSTER CARDS -->
+    <div id="webAppRosterArea">
+      <!-- 1. GATE DUTY TABLE CARD -->
+      <section class="roster-card">
+        <div class="card-header gate-header">
+          <h3><i class="fa-solid fa-torii-gate"></i> Gate Duty Roster</h3>
+          <span class="badge-subtitle">Entry & Exit Duty Posts</span>
+        </div>
+        <div class="table-responsive">
+          <table class="roster-table web-table" id="gateDutyTable">
+            <thead>
+              <tr id="webGateHeadRow">
+                <!-- Dynamic headers -->
+              </tr>
+            </thead>
+            <tbody id="gateDutyTbody">
+              <!-- Dynamic cells -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 2. LUNCH DUTY TABLE CARD -->
+      <section class="roster-card">
+        <div class="card-header lunch-header">
+          <h3><i class="fa-solid fa-utensils"></i> Lunch Duty Roster</h3>
+          <span class="badge-subtitle">Lunch Break Duty Posts</span>
+        </div>
+        <div class="table-responsive">
+          <table class="roster-table web-table" id="lunchDutyTable">
+            <thead>
+              <tr id="webLunchHeadRow">
+                <!-- Dynamic headers -->
+              </tr>
+            </thead>
+            <tbody id="lunchDutyTbody">
+              <!-- Dynamic cells -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- STRICT 2-PAGE PDF RENDER CONTAINER (ONLY VISIBLE DURING PDF EXPORT) -->
+    <div id="pdfExportContainer" class="pdf-export-container hidden">
+      
+      <!-- ==================== PAGE 1: GATE DUTY ==================== -->
+      <div class="pdf-page-container" id="pdfPage1">
+        <div class="pdf-header">
+          <div class="pdf-brand">
+            <img id="pdfLogoImg1" src="" alt="KV Logo" class="pdf-logo hidden">
+            <div id="pdfLogoPlaceholder1" class="pdf-logo-placeholder">
+              <i class="fa-solid fa-school"></i>
+            </div>
+            <div class="pdf-title-block">
+              <h1 class="pdf-title">PM SHRI KV BHAWANIPATNA</h1>
+              <h2 class="pdf-subtitle">GATE DUTY ROSTER</h2>
+              <p class="pdf-date-range" id="pdfDateRange1"></p>
+            </div>
+          </div>
+          <div class="pdf-note-banner" id="pdfNoteDisplay1"></div>
+        </div>
+
+        <div class="pdf-table-wrapper">
+          <table class="pdf-table">
+            <thead>
+              <tr id="pdfGateHeaderRow1">
+                <!-- Outer Headers -->
+              </tr>
+              <tr id="pdfGateHeaderRow2" class="dark-brown-subheaders">
+                <!-- Subheaders (Name & Sign) -->
+              </tr>
+            </thead>
+            <tbody id="pdfGateDutyTbody">
+              <!-- Gate PDF Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pdf-footer">
+          <div class="sig-box"><span class="sig-title">Time Table I/c</span></div>
+          <div class="sig-box"><span class="sig-title">Discipline I/c</span></div>
+          <div class="sig-box"><span class="sig-title">Principal</span></div>
+        </div>
+      </div>
+
+      <!-- PAGE BREAK MARKER -->
+      <div class="pdf-page-break"></div>
+
+      <!-- ==================== PAGE 2: LUNCH DUTY ==================== -->
+      <div class="pdf-page-container" id="pdfPage2">
+        <div class="pdf-header">
+          <div class="pdf-brand">
+            <img id="pdfLogoImg2" src="" alt="KV Logo" class="pdf-logo hidden">
+            <div id="pdfLogoPlaceholder2" class="pdf-logo-placeholder">
+              <i class="fa-solid fa-school"></i>
+            </div>
+            <div class="pdf-title-block">
+              <h1 class="pdf-title">PM SHRI KV BHAWANIPATNA</h1>
+              <h2 class="pdf-subtitle">LUNCH DUTY ROSTER</h2>
+              <p class="pdf-date-range" id="pdfDateRange2"></p>
+            </div>
+          </div>
+          <div class="pdf-note-banner" id="pdfNoteDisplay2"></div>
+        </div>
+
+        <div class="pdf-table-wrapper">
+          <table class="pdf-table">
+            <thead>
+              <tr id="pdfLunchHeaderRow1">
+                <!-- Outer Headers -->
+              </tr>
+              <tr id="pdfLunchHeaderRow2" class="dark-brown-subheaders">
+                <!-- Subheaders (Name & Sign) -->
+              </tr>
+            </thead>
+            <tbody id="pdfLunchDutyTbody">
+              <!-- Lunch PDF Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pdf-footer">
+          <div class="sig-box"><span class="sig-title">Time Table I/c</span></div>
+          <div class="sig-box"><span class="sig-title">Discipline I/c</span></div>
+          <div class="sig-box"><span class="sig-title">Principal</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TEACHER MANAGEMENT SECTION -->
+    <section class="teacher-mgmt-card" id="teacherMgmtSection">
+      <div class="card-header mgmt-header">
+        <div class="title-with-actions">
+          <h3><i class="fa-solid fa-users-gear"></i> Manage Teacher List</h3>
+          <p class="subtitle-text">Drag rows to reorder. Serial numbers adjust automatically. Saved in browser local storage.</p>
+        </div>
+        <div class="mgmt-buttons">
+          <button id="btnOpenBulkImportModal" class="btn btn-primary" title="Bulk Import from Excel, PDF, Word, Image (OCR), or CSV file">
+            <i class="fa-solid fa-file-import"></i> Bulk Import
+          </button>
+          <button id="btnOpenAddModal" class="btn btn-secondary">
+            <i class="fa-solid fa-user-plus"></i> Add Teacher
+          </button>
+          <button id="btnClearAllTeachers" class="btn btn-danger-solid" title="Clear all teachers and leave 1 empty row for custom entries">
+            <i class="fa-solid fa-eraser"></i> Clear All Names
+          </button>
+          <button id="btnOpenFindReplaceModal" class="btn btn-find-replace" title="Batch edit or replace common words in teacher names (like Find & Replace)">
+            <i class="fa-solid fa-magnifying-glass-arrow-right"></i> Find & Replace
+          </button>
+          <button id="btnResetDefault" class="btn btn-outline-danger" title="Load official 50 staff list from image scan">
+            <i class="fa-solid fa-rotate-left"></i> Load 50 KV Staff
+          </button>
+        </div>
+      </div>
+
+      <!-- TEACHER TABLE WITH DRAG & DROP -->
+      <div class="table-responsive">
+        <table class="teacher-table">
+          <thead>
+            <tr>
+              <th class="col-drag"><i class="fa-solid fa-grip-vertical"></i></th>
+              <th class="col-sno">S.No.</th>
+              <th>Teacher Name</th>
+              <th>Category</th>
+              <th>Level</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="teacherTableBody">
+            <!-- Dynamic Teacher Rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CONFIRMATION MODAL FOR CLEAR ALL -->
+  <div id="clearConfirmModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header" style="background: #fef2f2; border-bottom: 1px solid #fca5a5;">
+        <h3 style="color: #991b1b;"><i class="fa-solid fa-triangle-exclamation"></i> Confirm Delete All Names</h3>
+        <button class="modal-close" onclick="closeClearConfirmModal()">&times;</button>
+      </div>
+      <div class="modal-body-content" style="padding: 1.5rem;">
+        <p style="font-size: 0.95rem; color: #1e293b; line-height: 1.5; margin-bottom: 1rem;">
+          <strong>Are you sure you want to delete ALL teacher names?</strong>
+        </p>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem;">
+          This will wipe the current list and duty roster completely, leaving <strong>1 blank template row</strong> so you can enter fresh teacher names according to your needs.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeClearConfirmModal()">Cancel</button>
+          <button type="button" id="btnConfirmClearAll" class="btn btn-danger-solid" onclick="executeClearAllTeachers()">
+            <i class="fa-solid fa-trash-can"></i> Yes, Delete All Names
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE ACCESS & QR CODE MODAL -->
+  <div id="mobileModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-mobile-screen-button"></i> Mobile Access & App Installation</h3>
+        <button class="modal-close" onclick="closeMobileModal()">&times;</button>
+      </div>
+      <div class="modal-body-content" style="padding: 1.5rem; text-align: center;">
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">Scan this QR code with your phone camera or open the link below on any Android/iPhone connected to your Wi-Fi network:</p>
+        
+        <!-- Live Generated QR Code -->
+        <div style="background: #ffffff; padding: 1rem; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <img id="qrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://10.17.190.183:8080" alt="Mobile QR Code" style="width: 180px; height: 180px;">
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 8px; margin-bottom: 1.25rem;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Mobile Direct Link:</span>
+          <a id="mobileDirectLink" href="http://10.17.190.183:8080" target="_blank" style="font-size: 1rem; font-weight: 700; color: #1e40af; text-decoration: none;">http://10.17.190.183:8080</a>
+          <button class="btn btn-secondary" onclick="copyMobileLink()" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; margin-left: 8px;"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+
+        <div style="text-align: left; background: #eff6ff; border-left: 4px solid #2563eb; padding: 0.85rem; border-radius: 6px; font-size: 0.85rem; color: #1e3a8a;">
+          <strong style="display: block; margin-bottom: 4px;"><i class="fa-solid fa-download"></i> Install as App on Android / iPhone:</strong>
+          <ol style="margin-left: 1.2rem; margin-top: 4px; line-height: 1.4;">
+            <li>Open the link on Chrome (Android) or Safari (iPhone).</li>
+            <li>Tap browser menu <strong>⋮</strong> or <strong>Share</strong> button.</li>
+            <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install App"</strong>.</li>
+            <li>It will launch as a full-screen App icon on your phone!</li>
+          </ol>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.25rem;">
+          <button type="button" class="btn btn-primary" onclick="closeMobileModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BULK IMPORT MODAL -->
+  <div id="bulkImportModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-import"></i> Bulk Import Teachers (PDF, Excel, Word, Image OCR, CSV)</h3>
+        <button class="modal-close" onclick="closeBulkImportModal()">&times;</button>
+      </div>
+      <div class="bulk-import-body">
+        <div class="import-source-tabs">
+          <button id="tabFileImport" class="tab-btn active" onclick="switchImportTab('file')"><i class="fa-solid fa-file-arrow-up"></i> Upload File / Image (.xlsx, .pdf, .docx, .png, .jpg)</button>
+          <button id="tabTextImport" class="tab-btn" onclick="switchImportTab('text')"><i class="fa-solid fa-paste"></i> Paste Text / Table</button>
+        </div>
+
+        <!-- TAB 1: FILE / IMAGE UPLOAD -->
+        <div id="importTabFile" class="import-tab-content">
+          <div class="file-drop-area" id="fileDropArea">
+            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+            <p><strong>Click or Drag & Drop File / Image Here</strong></p>
+            <span class="file-types-hint">Supports Excel (.xlsx), PDF (.pdf), Word (.docx), Images (.png, .jpg, .jpeg) for OCR scanning, & CSV</span>
+            <input type="file" id="bulkFileInput" accept=".xlsx, .xls, .pdf, .docx, .csv, .txt, .png, .jpg, .jpeg, .webp, .bmp" class="file-input-hidden">
+          </div>
+          <div id="fileParsingStatus" class="parsing-status hidden">
+            <i class="fa-solid fa-spinner fa-spin"></i> <span id="parsingStatusText">Parsing file, please wait...</span>
+          </div>
+        </div>
+
+        <!-- TAB 2: PASTE TEXT -->
+        <div id="importTabText" class="import-tab-content hidden">
+          <label for="pasteTextInput" class="form-label">Paste Names / List (One per line or comma/tab separated):</label>
+          <textarea id="pasteTextInput" class="form-textarea" rows="6" placeholder="Shri Rajesh Kumar Sharma, Regular, Secondary&#10;Smt. Sunita Mohapatra, Regular, Primary&#10;Shri Rakesh Kumar, Contractual, Secondary"></textarea>
+          <button type="button" class="btn btn-secondary mt-2" onclick="parsePastedText()">
+            <i class="fa-solid fa-magnifying-glass"></i> Parse Pasted Text
+          </button>
+        </div>
+
+        <!-- PREVIEW TABLE OF EXTRACTED TEACHERS -->
+        <div id="bulkPreviewSection" class="bulk-preview-section hidden">
+          <div class="preview-header">
+            <h4>Extracted Teachers (<span id="previewCount">0</span> found)</h4>
+            <div class="import-mode-options">
+              <label><input type="radio" name="importMode" value="append" checked> Append to existing list</label>
+              <label><input type="radio" name="importMode" value="replace"> Replace current list</label>
+            </div>
+          </div>
+          <div class="table-responsive preview-table-wrapper">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Extracted Teacher Name</th>
+                  <th>Category</th>
+                  <th>Level</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="previewTableBody">
+                <!-- Dynamic preview rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeBulkImportModal()">Cancel</button>
+          <button type="button" id="btnConfirmBulkImport" class="btn btn-success hidden" onclick="confirmBulkImport()">
+            <i class="fa-solid fa-check"></i> Import Teachers
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT TIMINGS MODAL -->
+  <div id="timingsModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-clock"></i> Edit Duty Posts & Timings</h3>
+        <button class="modal-close" onclick="closeTimingsModal()">&times;</button>
+      </div>
+      <form id="timingsForm">
+        <h4 class="form-section-title"><i class="fa-solid fa-torii-gate"></i> Gate Duty Posts</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Gate Post 1 Label & Timing</label>
+            <input type="text" id="post_gate_entry1_label" class="form-input" placeholder="Entry Gate 1">
+            <input type="text" id="post_gate_entry1_time" class="form-input mt-1" placeholder="07:00–07:30 AM">
+          </div>
+          <div class="form-group">
+            <label>Gate Post 2 Label & Timing</label>
+            <input type="text" id="post_gate_entry2_label" class="form-input" placeholder="Entry Gate 2">
+            <input type="text" id="post_gate_entry2_time" class="form-input mt-1" placeholder="07:00–07:30 AM">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Gate Post 3 Label & Timing</label>
+            <input type="text" id="post_gate_exit1_label" class="form-input" placeholder="Exit Gate 1">
+            <input type="text" id="post_gate_exit1_time" class="form-input mt-1" placeholder="01:44–02:00 PM">
+          </div>
+          <div class="form-group">
+            <label>Gate Post 4 Label & Timing</label>
+            <input type="text" id="post_gate_exit2_label" class="form-input" placeholder="Exit Gate 2">
+            <input type="text" id="post_gate_exit2_time" class="form-input mt-1" placeholder="01:44–02:00 PM">
+          </div>
+        </div>
+
+        <h4 class="form-section-title mt-3"><i class="fa-solid fa-utensils"></i> Lunch Duty Posts</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lunch Post 1 Label & Timing</label>
+            <input type="text" id="post_lunch_chem_label" class="form-input" placeholder="Near Chemistry Lab">
+            <input type="text" id="post_lunch_chem_time" class="form-input mt-1" placeholder="10:40–11:00 AM">
+          </div>
+          <div class="form-group">
+            <label>Lunch Post 2 Label & Timing</label>
+            <input type="text" id="post_lunch_class6b_label" class="form-input" placeholder="Near Class 6B">
+            <input type="text" id="post_lunch_class6b_time" class="form-input mt-1" placeholder="10:40–11:00 AM">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lunch Post 3 Label & Timing</label>
+            <input type="text" id="post_lunch_assembly_label" class="form-input" placeholder="Assembly Ground">
+            <input type="text" id="post_lunch_assembly_time" class="form-input mt-1" placeholder="10:40–11:00 AM">
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeTimingsModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Timings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT TEACHER MODAL -->
+  <div id="teacherModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add New Teacher</h3>
+        <button class="modal-close" onclick="closeTeacherModal()">&times;</button>
+      </div>
+      <form id="teacherForm">
+        <input type="hidden" id="teacherId">
+        <div class="form-group">
+          <label for="teacherName">Teacher Name *</label>
+          <input type="text" id="teacherName" required placeholder="e.g. Shri Rajesh Kumar Sharma" class="form-input">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="teacherCategory">Category *</label>
+            <select id="teacherCategory" required class="form-select">
+              <option value="Regular">Regular</option>
+              <option value="Contractual">Contractual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="teacherLevel">Level *</label>
+            <select id="teacherLevel" required class="form-select">
+              <option value="Primary">Primary</option>
+              <option value="Secondary">Secondary</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeTeacherModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveTeacher">Save Teacher</button>
+        </div>
+  <!-- BATCH FIND & REPLACE MODAL -->
+  <div id="findReplaceModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Batch Find & Replace</h3>
+        <button class="modal-close" onclick="closeFindReplaceModal()">&times;</button>
+      </div>
+      <div class="modal-body-content" style="padding: 1.5rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Batch edit common words or designations across all teacher names at once (e.g. replace <code>(PGT)</code> with <code>PGT Teacher</code> or <code>Sh.</code> with <code>Shri</code>).
+        </p>
+        
+        <div class="form-group mb-3" style="margin-bottom: 1rem;">
+          <label for="findTextInput" class="form-label" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Find Text *</label>
+          <input type="text" id="findTextInput" class="form-input" placeholder="e.g. (PRT) or Sh." oninput="updateFindReplacePreview()">
+        </div>
+
+        <div class="form-group mb-3" style="margin-bottom: 1rem;">
+          <label for="replaceTextInput" class="form-label" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Replace With</label>
+          <input type="text" id="replaceTextInput" class="form-input" placeholder="e.g. Primary Teacher or Shri" oninput="updateFindReplacePreview()">
+        </div>
+
+        <div class="form-row mb-3" style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text-dark);">
+            <input type="checkbox" id="matchCaseCheckbox" onchange="updateFindReplacePreview()"> Match Case (Exact Upper/Lowercase)
+          </label>
+        </div>
+
+        <!-- LIVE PREVIEW COUNTER BOX -->
+        <div id="findReplacePreviewBox" style="background: #f1f5f9; border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #334155; margin-bottom: 1.25rem; line-height: 1.4;">
+          <i class="fa-solid fa-info-circle"></i> Type text in 'Find Text' to see live replacement preview.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeFindReplaceModal()">Cancel</button>
+          <button type="button" id="btnExecuteFindReplace" class="btn btn-primary" onclick="executeFindReplace()">
+            <i class="fa-solid fa-bolt"></i> Replace All Matches
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

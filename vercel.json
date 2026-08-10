@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "name": "pm-shri-kv-gate-duty-roster",
+  "cleanUrls": true,
+  "routes": [
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
